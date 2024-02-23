@@ -1,6 +1,7 @@
+import com.andannn.gsonclassgen.util.toLowerCamelCase
+import com.andannn.gsonclassgen.util.toUpperCamelCase
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
-import kotlin.test.expect
 
 class CamelStringTest {
 
