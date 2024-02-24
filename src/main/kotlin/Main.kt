@@ -1,7 +1,3 @@
-package com.andannn.gsonclassgen
-
-import com.andannn.gsonclassgen.util.toLowerCamelCase
-import com.andannn.gsonclassgen.util.toUpperCamelCase
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.moshi.JsonAdapter

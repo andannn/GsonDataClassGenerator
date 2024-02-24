@@ -4,7 +4,7 @@ plugins {
     application
 }
 
-group = "org.example"
+group = "com.andannn"
 version = "1.0-SNAPSHOT"
 
 repositories {
