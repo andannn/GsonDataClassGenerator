@@ -22,7 +22,7 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build --no-daemon  # 使用 Gradle 构建项目
 
-      - name: Build with Gradle
+      - name: Release
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
           files: "build/libs/"
