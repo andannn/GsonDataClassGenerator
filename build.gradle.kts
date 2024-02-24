@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.andannn"
-version = "0.1-alpha"
+version = "0.1"
 
 repositories {
     mavenCentral()
