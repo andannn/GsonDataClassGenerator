@@ -1,11 +1,10 @@
 plugins {
     kotlin("jvm") version "1.9.0"
-    kotlin("plugin.serialization") version "1.9.0"
     application
 }
 
 group = "com.andannn"
-version = "1.0-SNAPSHOT"
+version = "0.1-alpha"
 
 repositories {
     mavenCentral()
