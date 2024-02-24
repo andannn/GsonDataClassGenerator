@@ -32,3 +32,15 @@ kotlin {
 application {
     mainClass.set("MainKt")
 }
+
+tasks.jar {
+    manifest {
+        attributes["Main-Class"] = "MainKt" // 格式为包名+类名+“Kt”（因为kotlin编译后生成的java类会自动加上kt）
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    configurations["compileClasspath"].forEach { file: File ->
+        from(zipTree(file.absoluteFile))
+    }
+}
