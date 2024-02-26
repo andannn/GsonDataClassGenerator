@@ -58,7 +58,7 @@ fun main(args: Array<String>): Unit = mainBody {
     val parser = ArgParser(
         args,
         helpFormatter = DefaultHelpFormatter(
-            prologue = "Simple tool to generate Kotlin data class form json string."
+            prologue = "Simple tool to generate Kotlin data class form json string.",
         ),
     )
     _arguments = parser.parseInto(::GsonClassGeneratorArgs)
