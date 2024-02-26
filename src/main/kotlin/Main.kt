@@ -1,11 +1,21 @@
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.AnnotationSpec
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.asTypeName
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapter
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.xenomachina.argparser.ArgParser
+import com.xenomachina.argparser.DefaultHelpFormatter
 import com.xenomachina.argparser.default
+import com.xenomachina.argparser.mainBody
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.io.File
@@ -16,22 +26,25 @@ val listClass = ClassName("kotlin.collections", "List")
 class GsonClassGeneratorArgs(parser: ArgParser) {
     val source by parser.positional(
         "SOURCE",
-        help = "source filename",
+        help = "source filename or dictionary.",
     )
 
     val destination by parser.storing(
-        "-o", "--output",
-        help = "output position"
+        "-o",
+        "--output",
+        help = "output destination.",
     ).default(File(::main.javaClass.protectionDomain.codeSource.location.toURI()).parent.toString())
 
     val isDividedFile by parser.flagging(
+        "-d",
         "--divide",
-        help = "true if divide output file"
+        help = "whether to generate the kt file for each json block.",
     )
 
     val packageName by parser.storing(
+        "-p",
         "--package",
-        help = "class package"
+        help = "package name of kt file",
     ).default("com.xxx")
 }
 
@@ -41,8 +54,14 @@ private val destinationDictionary get() = File(arguments.destination)
 private val divideFile get() = arguments.isDividedFile
 private val packageName get() = arguments.packageName
 
-fun main(args: Array<String>) {
-    _arguments = ArgParser(args).parseInto(::GsonClassGeneratorArgs)
+fun main(args: Array<String>): Unit = mainBody {
+    val parser = ArgParser(
+        args,
+        helpFormatter = DefaultHelpFormatter(
+            prologue = "Simple tool to generate Kotlin data class form json string."
+        ),
+    )
+    _arguments = parser.parseInto(::GsonClassGeneratorArgs)
 
     val destinationDictionary = File(arguments.destination)
     check(destinationDictionary.exists() && destinationDictionary.isDirectory) {
@@ -69,7 +88,6 @@ fun main(args: Array<String>) {
 
         parseJsonFile(jsonFileName = jsonFileName, jsonString = jsonString)
     }
-
 }
 
 @OptIn(ExperimentalStdlibApi::class)
@@ -77,7 +95,8 @@ fun parseJsonFile(jsonFileName: String, jsonString: String) {
     println("------------------ parsing $jsonFileName E ------------------")
     val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
     val jsonAdapter: JsonAdapter<Map<String, Any>> = moshi.adapter(typeOf<Map<String, Any>>())
-    val jsonObject = jsonAdapter.fromJson(jsonString) ?: throw IllegalArgumentException("Invalid JSON")
+    val jsonObject =
+        jsonAdapter.fromJson(jsonString) ?: throw IllegalArgumentException("Invalid JSON")
 
     val rootClassName = jsonFileName.substringBeforeLast(".").toUpperCamelCase()
 
@@ -106,7 +125,10 @@ fun FileSpec.Builder.generateDataKotlinClass(
         when (propertyValue) {
             is Map<*, *> -> {
                 if (divideFile) {
-                    FileSpec.builder(fileName = propertyName.toUpperCamelCase(), packageName = packageName)
+                    FileSpec.builder(
+                        fileName = propertyName.toUpperCamelCase(),
+                        packageName = packageName,
+                    )
                         .generateDataKotlinClass(
                             className = propertyName.toUpperCamelCase(),
                             jsonMap = propertyValue as Map<String, Any>,
@@ -121,8 +143,14 @@ fun FileSpec.Builder.generateDataKotlinClass(
                 }
 
                 val mapClass =
-                    ClassName(packageName = packageName, simpleNames = listOf(propertyName.toUpperCamelCase()))
-                (classBuilder to constructorBuilder).addPrimaryConstructorAndAnnotation(propertyName, mapClass)
+                    ClassName(
+                        packageName = packageName,
+                        simpleNames = listOf(propertyName.toUpperCamelCase()),
+                    )
+                (classBuilder to constructorBuilder).addPrimaryConstructorAndAnnotation(
+                    propertyName,
+                    mapClass,
+                )
             }
 
             is List<*> -> {
@@ -130,7 +158,10 @@ fun FileSpec.Builder.generateDataKotlinClass(
                     (propertyValue.first() as? Map<String, Any>)?.let {
                         val trimmedName = propertyName.substringBeforeLast("s")
                         if (divideFile) {
-                            FileSpec.builder(fileName = trimmedName.toUpperCamelCase(), packageName = packageName)
+                            FileSpec.builder(
+                                fileName = trimmedName.toUpperCamelCase(),
+                                packageName = packageName,
+                            )
                                 .generateDataKotlinClass(
                                     className = trimmedName.toUpperCamelCase(),
                                     jsonMap = it,
@@ -148,39 +179,43 @@ fun FileSpec.Builder.generateDataKotlinClass(
                             listClass.parameterizedBy(
                                 ClassName(
                                     packageName = packageName,
-                                    simpleNames = listOf(trimmedName.toUpperCamelCase())
-                                )
+                                    simpleNames = listOf(trimmedName.toUpperCamelCase()),
+                                ),
                             )
                         (classBuilder to constructorBuilder).addPrimaryConstructorAndAnnotation(
                             propertyName = propertyName,
-                            type = listClass
+                            type = listClass,
                         )
                         return@forEach
                     }
 
-                    val listClass = listClass.parameterizedBy(propertyValue.first()!!::class.asTypeName())
-                    (classBuilder to constructorBuilder).addPrimaryConstructorAndAnnotation(propertyName, listClass)
+                    val listClass =
+                        listClass.parameterizedBy(propertyValue.first()!!::class.asTypeName())
+                    (classBuilder to constructorBuilder).addPrimaryConstructorAndAnnotation(
+                        propertyName,
+                        listClass,
+                    )
                 }
             }
 
             is String -> {
                 (classBuilder to constructorBuilder).addPrimaryConstructorAndAnnotation(
                     propertyName,
-                    String::class.asTypeName()
+                    String::class.asTypeName(),
                 )
             }
 
             is Int -> {
                 (classBuilder to constructorBuilder).addPrimaryConstructorAndAnnotation(
                     propertyName,
-                    Int::class.asTypeName()
+                    Int::class.asTypeName(),
                 )
             }
 
             is Double -> {
                 (classBuilder to constructorBuilder).addPrimaryConstructorAndAnnotation(
                     propertyName,
-                    Double::class.asTypeName()
+                    Double::class.asTypeName(),
                 )
             }
         }
@@ -189,16 +224,19 @@ fun FileSpec.Builder.generateDataKotlinClass(
     return this.addType(
         classBuilder
             .primaryConstructor(
-                constructorBuilder.build()
+                constructorBuilder.build(),
             )
             .addAnnotation(
-                AnnotationSpec.builder(Serializable::class).build()
+                AnnotationSpec.builder(Serializable::class).build(),
             )
-            .build()
+            .build(),
     )
 }
 
-fun Pair<TypeSpec.Builder, FunSpec.Builder>.addPrimaryConstructorAndAnnotation(propertyName: String, type: TypeName) {
+fun Pair<TypeSpec.Builder, FunSpec.Builder>.addPrimaryConstructorAndAnnotation(
+    propertyName: String,
+    type: TypeName,
+) {
     val (classBuilder, constructorBuilder) = this
     val propertyNameLowerCamel = propertyName.toLowerCamelCase()
     classBuilder.addProperty(
@@ -207,10 +245,9 @@ fun Pair<TypeSpec.Builder, FunSpec.Builder>.addPrimaryConstructorAndAnnotation(p
             .addAnnotation(
                 AnnotationSpec.builder(SerialName::class)
                     .addMember("value = %S", propertyName)
-                    .build()
+                    .build(),
             )
-            .build()
+            .build(),
     )
     constructorBuilder.addParameter(propertyNameLowerCamel, type)
 }
-
