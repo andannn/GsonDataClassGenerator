@@ -17,4 +17,4 @@ java -jar data-class-generator-0.2.jar [-h] SOURCE [-o OUTPUT] [-d] [-p PACKAGE]
 
 | Arg    |                                                                Description |
 |:-------|---------------------------------------------------------------------------:|
-| SOURCE | source filename or dictionary(ony json file with **.json** file extension) |
+| SOURCE | source filename or dictionary(only json file with **.json** file extension) |
