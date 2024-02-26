@@ -15,8 +15,6 @@ java -jar data-class-generator-0.2.jar [-h] SOURCE [-o OUTPUT] [-d] [-p PACKAGE]
 
 **positional arguments**:
 
-SOURCE source filename or dictionary.
-
 | Arg    |                   Description |
 |:-------|------------------------------:|
 | SOURCE | source filename or dictionary |
