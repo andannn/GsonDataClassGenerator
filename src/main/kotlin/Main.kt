@@ -218,6 +218,13 @@ fun FileSpec.Builder.generateDataKotlinClass(
                     Double::class.asTypeName(),
                 )
             }
+
+            is Boolean -> {
+                (classBuilder to constructorBuilder).addPrimaryConstructorAndAnnotation(
+                    propertyName,
+                    Boolean::class.asTypeName(),
+                )
+            }
         }
     }
 
